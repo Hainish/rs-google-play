@@ -113,6 +113,10 @@ impl Gpapi {
         connector
             .set_cipher_list(consts::GOOGLE_ACCEPTED_CIPHERS)
             .unwrap();
+	//// using just required supported elliptic curve groups
+	connector
+            .set_groups_list(consts::SUPPORTED_ELLIPTIC_CURVE_GROUPS)
+            .unwrap();
         let https = HttpsConnector::with_connector(http, connector).unwrap();
         let hyper_client = Client::builder().build::<_, hyper::Body>(https);
 

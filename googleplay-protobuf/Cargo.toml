@@ -9,7 +9,7 @@ description = "The automatically generated types derived from the Google Play Pr
 repository = "https://github.com/EFForg/rs-google-play/tree/master/googleplay-protobuf"
 
 [dependencies]
-prost = "0.12"
+prost = "0.11"
 
 [build-dependencies]
-prost-build = "0.12"
+prost-build = "0.11"
