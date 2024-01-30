@@ -113,7 +113,7 @@ impl Gpapi {
         connector
             .set_cipher_list(consts::GOOGLE_ACCEPTED_CIPHERS)
             .unwrap();
-	//// using just required supported elliptic curve groups
+	// using just required supported elliptic curve groups
 	connector
             .set_groups_list(consts::SUPPORTED_ELLIPTIC_CURVE_GROUPS)
             .unwrap();
