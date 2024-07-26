@@ -1169,6 +1169,26 @@ message Item {
   optional bool useWishlistAsPrimaryAction = 33;
   optional string reviewQuestionsUrl = 34;
   optional string reviewSummaryUrl = 39;
+  optional ContentRating contentRating = 50;
+}
+
+message ContentRating {
+  message ContentRatingImage {
+    message Dimension {
+      optional int32 width = 3;
+      optional int32 height = 4;
+    }
+    message Image {
+      optional string url = 1;
+    }
+    optional Dimension dimension = 3;
+    optional Image image = 6;
+  }
+  optional string title = 1;
+  optional string recommendationAndDescriptionHtml = 2;
+  optional ContentRatingImage contentRatingImage = 3;
+  optional string recommendation = 5;
+  optional string description = 6;
 }
 
 message AppInfo {

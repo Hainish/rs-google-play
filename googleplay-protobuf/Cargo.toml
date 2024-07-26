@@ -1,6 +1,6 @@
 [package]
 name = "googleplay-protobuf"
-version = "2.0.0"
+version = "2.1.0"
 authors = ["Bill Budington <bill@eff.org>"]
 build = "build.rs"
 license = "MIT"
@@ -9,7 +9,7 @@ description = "The automatically generated types derived from the Google Play Pr
 repository = "https://github.com/EFForg/rs-google-play/tree/master/googleplay-protobuf"
 
 [dependencies]
-prost = "0.12"
+prost = "0.13"
 
 [build-dependencies]
-prost-build = "0.12"
+prost-build = "0.13"
