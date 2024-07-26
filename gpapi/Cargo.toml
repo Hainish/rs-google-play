@@ -1,6 +1,6 @@
 [package]
 name = "gpapi"
-version = "5.1.0"
+version = "5.2.0"
 authors = ["Bill Budington <bill@eff.org>"]
 build = "build.rs"
 license = "MIT"
@@ -13,7 +13,7 @@ repository = "https://github.com/EFForg/rs-google-play/tree/master/gpapi"
 doctest = false
 
 [dependencies]
-prost = "0.12"
+prost = "0.13"
 #reqwest = "0.12"
 bytes = "1"
 hyper = { version = "0.14", features = ["full"] }
@@ -26,7 +26,7 @@ serde = { version = "1", features = ["derive"] }
 
 [build-dependencies]
 googleplay-protobuf = "2"
-prost = "0.12"
+prost = "0.13"
 bincode = "1"
 configparser = "3"
 serde = { version = "1", features = ["derive"] }
