@@ -67,13 +67,13 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use bytes::Bytes;
 use futures::future::TryFutureExt;
-use hyper::client::HttpConnector;
-use hyper::header::{HeaderName as HyperHeaderName, HeaderValue as HyperHeaderValue};
-use hyper::{Body, Client, Method, Request};
-use hyper_tls::HttpsConnector;
+//use hyper::client::HttpConnector;
+//use hyper::header::{HeaderName as HyperHeaderName, HeaderValue as HyperHeaderValue};
+//use hyper::{Body, Client, Method, Request};
+//use hyper_tls::HttpsConnector;
 use prost::Message;
-//use reqwest::header::{HeaderMap, HeaderValue, HeaderName};
-//use reqwest::Url;
+use reqwest::header::{HeaderMap, HeaderValue, HeaderName};
+use reqwest::Url;
 use tokio_dl_stream_to_disk::AsyncDownload;
 
 use crate::error::{Error as GpapiError, ErrorKind as GpapiErrorKind};
@@ -115,18 +115,18 @@ pub struct Gpapi {
     tos_token: Option<String>,
     dfe_cookie: Option<String>,
     gsf_id: Option<i64>,
-    //client: Box<reqwest::Client>,
-    hyper_client: Box<hyper::Client<HttpsConnector<HttpConnector>>>,
+    client: Box<reqwest::Client>,
+    //hyper_client: Box<hyper::Client<HttpsConnector<HttpConnector>>>,
 }
 
 impl Gpapi {
     /// Returns a Gpapi struct.
     ///
     pub fn new<S: Into<String>>(device_codename: S, email: S) -> Self {
-        let mut http = HttpConnector::new();
-        http.enforce_http(false);
-        let https = HttpsConnector::new_with_connector(http);
-        let hyper_client = Client::builder().build::<_, hyper::Body>(https);
+        //let mut http = HttpConnector::new();
+        //http.enforce_http(false);
+        //let https = HttpsConnector::new_with_connector(http);
+        //let hyper_client = Client::builder().build::<_, hyper::Body>(https);
 
         Gpapi {
             locale: String::from("en_US"),
@@ -143,8 +143,8 @@ impl Gpapi {
             tos_token: None,
             dfe_cookie: None,
             gsf_id: None,
-            //client: Box::new(reqwest::Client::new()),
-            hyper_client: Box::new(hyper_client),
+            client: Box::new(reqwest::Client::new()),
+            //hyper_client: Box::new(hyper_client),
         }
     }
 
@@ -824,6 +824,56 @@ impl Gpapi {
         Ok(resp)
     }
 
+    //async fn execute_request_helper_hyper(
+    //    &self,
+    //    endpoint: &str,
+    //    query: Option<HashMap<&str, String>>,
+    //    msg: Option<&[u8]>,
+    //    headers: HashMap<&str, String>,
+    //    fdfe: bool,
+    //) -> Result<Bytes, Box<dyn Error>> {
+    //    let query = if let Some(query) = query {
+    //        format!("?{}", query
+    //            .iter()
+    //            .map(|(k, v)| format!("{}={}", k, v))
+    //            .collect::<Vec<String>>()
+    //            .join("&")
+    //        )
+    //    } else {
+    //        String::from("")
+    //    };
+
+    //    let url = if fdfe {
+    //        format!("{}/fdfe/{}{}", consts::defaults::DEFAULT_BASE_URL, endpoint, query)
+    //    } else {
+    //        format!("{}/{}{}", consts::defaults::DEFAULT_BASE_URL, endpoint, query)
+    //    };
+
+    //    let mut req = if let Some(msg) = msg {
+    //        Request::builder()
+    //            .method(Method::POST)
+    //            .uri(url)
+    //            .body(Body::from(msg.to_owned()))
+    //            .unwrap()
+    //    } else {
+    //        Request::builder()
+    //            .method(Method::GET)
+    //            .uri(url)
+    //            .body(Body::empty())
+    //            .unwrap()
+    //    };
+    //    let hyper_headers = req.headers_mut();
+
+    //    for (key, val) in headers {
+    //        hyper_headers.insert(HyperHeaderName::from_bytes(key.as_bytes())?, HyperHeaderValue::from_str(&val)?);
+    //    }
+
+    //    let res = self.hyper_client.request(req).await?;
+
+    //    let body_bytes = hyper::body::to_bytes(res.into_body()).await?;
+    //    Ok(body_bytes)
+    //}
+
     async fn execute_request_helper(
         &self,
         endpoint: &str,
@@ -832,97 +882,47 @@ impl Gpapi {
         headers: HashMap<&str, String>,
         fdfe: bool,
     ) -> Result<Bytes, Box<dyn Error>> {
-        let query = if let Some(query) = query {
-            format!("?{}", query
-                .iter()
-                .map(|(k, v)| format!("{}={}", k, v))
-                .collect::<Vec<String>>()
-                .join("&")
-            )
+        let mut url = if fdfe {
+            Url::parse(&format!(
+                "{}/fdfe/{}",
+                consts::defaults::DEFAULT_BASE_URL,
+                endpoint
+            ))?
         } else {
-            String::from("")
+            Url::parse(&format!(
+                "{}/{}",
+                consts::defaults::DEFAULT_BASE_URL,
+                endpoint
+            ))?
         };
 
-        let url = if fdfe {
-            format!("{}/fdfe/{}{}", consts::defaults::DEFAULT_BASE_URL, endpoint, query)
-        } else {
-            format!("{}/{}{}", consts::defaults::DEFAULT_BASE_URL, endpoint, query)
-        };
-
-        let mut req = if let Some(msg) = msg {
-            Request::builder()
-                .method(Method::POST)
-                .uri(url)
-                .body(Body::from(msg.to_owned()))
-                .unwrap()
-        } else {
-            Request::builder()
-                .method(Method::GET)
-                .uri(url)
-                .body(Body::empty())
-                .unwrap()
-        };
-        let hyper_headers = req.headers_mut();
-
-        for (key, val) in headers {
-            hyper_headers.insert(HyperHeaderName::from_bytes(key.as_bytes())?, HyperHeaderValue::from_str(&val)?);
+        if let Some(query) = query {
+            let mut queries = url.query_pairs_mut();
+            for (key, val) in query {
+                queries.append_pair(key, &val);
+            }
         }
 
-        let res = self.hyper_client.request(req).await?;
+        let mut reqwest_headers = HeaderMap::new();
+        for (key, val) in headers {
+            reqwest_headers.insert(HeaderName::from_bytes(key.as_bytes())?, HeaderValue::from_str(&val)?);
+        }
 
-        let body_bytes = hyper::body::to_bytes(res.into_body()).await?;
-        Ok(body_bytes)
+        let res = {
+            if let Some(msg) = msg {
+                (*self.client)
+                    .post(url)
+                    .headers(reqwest_headers)
+                    .body(msg.to_owned())
+                    .send()
+                    .await?
+            } else {
+                (*self.client).get(url).headers(reqwest_headers).send().await?
+            }
+        };
+
+        Ok(res.bytes().await?)
     }
-
-    //async fn execute_request_helper_reqwest(
-    //    &self,
-    //    endpoint: &str,
-    //    query: Option<HashMap<&str, String>>,
-    //    msg: Option<&[u8]>,
-    //    headers: HashMap<&str, String>,
-    //    fdfe: bool,
-    //) -> Result<Bytes, Box<dyn Error>> {
-    //    let mut url = if fdfe {
-    //        Url::parse(&format!(
-    //            "{}/fdfe/{}",
-    //            consts::defaults::DEFAULT_BASE_URL,
-    //            endpoint
-    //        ))?
-    //    } else {
-    //        Url::parse(&format!(
-    //            "{}/{}",
-    //            consts::defaults::DEFAULT_BASE_URL,
-    //            endpoint
-    //        ))?
-    //    };
-
-    //    if let Some(query) = query {
-    //        let mut queries = url.query_pairs_mut();
-    //        for (key, val) in query {
-    //            queries.append_pair(key, &val);
-    //        }
-    //    }
-
-    //    let mut reqwest_headers = HeaderMap::new();
-    //    for (key, val) in headers {
-    //        reqwest_headers.insert(HeaderName::from_bytes(key.as_bytes())?, HeaderValue::from_str(&val)?);
-    //    }
-
-    //    let res = {
-    //        if let Some(msg) = msg {
-    //            (*self.client)
-    //                .post(url)
-    //                .headers(reqwest_headers)
-    //                .body(msg.to_owned())
-    //                .send()
-    //                .await?
-    //        } else {
-    //            (*self.client).get(url).headers(reqwest_headers).send().await?
-    //        }
-    //    };
-
-    //    Ok(res.bytes().await?)
-    //}
 
 }
 

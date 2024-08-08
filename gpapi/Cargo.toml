@@ -1,6 +1,6 @@
 [package]
 name = "gpapi"
-version = "5.2.0"
+version = "5.3.0"
 authors = ["Bill Budington <bill@eff.org>"]
 build = "build.rs"
 license = "MIT"
@@ -14,10 +14,10 @@ doctest = false
 
 [dependencies]
 prost = "0.13"
-#reqwest = "0.12"
+reqwest = "0.12"
 bytes = "1"
-hyper = { version = "0.14", features = ["full"] }
-hyper-tls = "0.5"
+#hyper = { version = "0.14", features = ["full"] }
+#hyper-tls = "0.5"
 googleplay-protobuf = "2"
 bincode = "1"
 futures = "0.3"
