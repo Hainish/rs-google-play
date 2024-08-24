@@ -21,7 +21,7 @@ bytes = "1"
 googleplay-protobuf = "2"
 bincode = "1"
 futures = "0.3"
-tokio-dl-stream-to-disk = "1"
+tokio-dl-stream-to-disk = { git = "https://github.com/xhyrom-forks/tokio-dl-stream-to-disk" }
 serde = { version = "1", features = ["derive"] }
 
 [build-dependencies]
