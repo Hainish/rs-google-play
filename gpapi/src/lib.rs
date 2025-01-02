@@ -435,7 +435,7 @@ impl Gpapi {
     }
 
     async fn get_latest_version_for_pkg_name(&self, pkg_name: &str) -> Result<i32, GpapiError> {
-        if let Some(details) = self.details(pkg_name).await? {
+        if let Some(details) = self.details(pkg_name, None).await? {
             if let Some(item) = details.item {
                 if let Some(details) = item.details {
                     if let Some(app_details) = details.app_details {
@@ -454,15 +454,24 @@ impl Gpapi {
     /// # Arguments
     ///
     /// * `pkg_name` - A string type specifying the package's app ID, e.g. `com.instagram.android`
+    /// * `version_code` - An optional version code, given in i32.  If omitted, the latest version will
+    /// be used
     pub async fn details<S: Into<String>>(
         &self,
         pkg_name: S,
+        version_code: Option<i32>
     ) -> Result<Option<DetailsResponse>, Box<dyn Error>> {
+        let pkg_name = pkg_name.into();
         if self.auth_token.is_none() {
             return Err(Box::new(GpapiError::new(GpapiErrorKind::LoginRequired)));
         }
+
         let mut form_params = HashMap::new();
-        form_params.insert("doc", pkg_name.into());
+        form_params.insert("doc", pkg_name);
+
+        if let Some(version_code) = version_code {
+            form_params.insert("vc", version_code.to_string());
+        }
 
         let headers = self.get_default_headers()?;
 
@@ -1132,7 +1141,7 @@ mod tests {
                 let mut api = Gpapi::new("px_7a", &email);
                 api.set_aas_token(aas_token);
                 if api.login().await.is_ok() {
-                    assert!(api.details("com.viber.voip").await.is_ok());
+                    assert!(api.details("com.viber.voip", None).await.is_ok());
                 }
             }
         }
